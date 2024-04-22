@@ -1,47 +1,27 @@
-import tkinter as tk
-from tkinter import messagebox
-import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from pynput import mouse
+import multiprocessing
+import frontend
+import time
 
-def on_move(x, y):
-    inverted_y = screen_height - y
-    label.config(text=f"Cursor Position - X: {x}, Y: {inverted_y}")
-    update_plot(x, inverted_y)
+def plot_points_from_input(pipe):
+    pipe.send((23, 23))
+    print("Point sent to UI")
 
-def update_plot(x, y):
-    ax.clear()
-    ax.scatter(x, y, color='red')
-    ax.set_xlim(0, screen_width)
-    ax.set_ylim(0, screen_height)
-    ax.set_aspect('equal', adjustable='box')
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_title('Plot of Cursor Position')
-    canvas.draw()
+if __name__ == "__main__":
+    # Create a Pipe for communication with the UI process
+    main_pipe, ui_pipe = multiprocessing.Pipe()
 
-# Create the main window
-root = tk.Tk()
-root.title("Real-Time Cursor Position")
+    # Start the Tkinter UI in a separate process
+    ui_process = multiprocessing.Process(target=frontend.run_ui, args=(ui_pipe,))
+    ui_process.start()
 
-# Get screen resolution
-screen_width = root.winfo_screenwidth()
-screen_height = root.winfo_screenheight()
+    # Wait for a short time to allow the UI process to update
+    time.sleep(5)
 
-# Create a label to display cursor position
-label = tk.Label(root, text="Cursor Position - X: 0, Y: 0")
-label.pack(padx=10, pady=10)
+    # Plot points from input in the main process
+    plot_points_from_input(main_pipe)
 
-# Create a matplotlib figure and subplot
-fig, ax = plt.subplots()
-canvas = FigureCanvasTkAgg(fig, master=root)
-canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    # Close the pipe to signal the end of communication
+    #main_pipe.close()
 
-# Bind mouse motion event to the canvas
-listener = mouse.Listener(on_move=on_move)
-listener.start()
-
-# Run the application
-root.mainloop()
+    # Wait for the UI process to finish
+    #ui_process.join()
