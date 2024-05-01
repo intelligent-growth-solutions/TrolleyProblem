@@ -9,7 +9,7 @@ class Frontend:
     def __init__(self, root):
         if root is not None:
             self.root = root
-            self.root.title("Tkinter UI with Matplotlib")
+            self.root.title("Where Trolley?")
         else:
             self.root = None
 
@@ -20,15 +20,22 @@ class Frontend:
         self.ax.set_ylim(0, 100)
 
     def plot_point(self, x, y):
-        self.root.title("we made it")
+        #self.clear_plot()
+        #self.ax.clear()
+        self.ax.set_xlim(0, 100)
+        self.ax.set_ylim(0, 100)
+
+        self.root.title("Where Trolley?")
         #self.clear_plot()
         print("Plotting point:", x, y)
         #self.ax.plot(x, y, 'ro')
-        self.ax.scatter(x, y, color='red', zorder=5)
+        self.ax.scatter(x, y, color='green', zorder=5)
         self.canvas.draw()
 
     def clear_plot(self):
         self.ax.clear()
+        self.ax.set_xlim(0, 100)
+        self.ax.set_ylim(0, 100)
         self.canvas.draw()
 
 def run_ui(ui_pipe):
@@ -38,8 +45,11 @@ def run_ui(ui_pipe):
     # Receive messages from the pipe and plot points
     while True:
         if ui_pipe.poll():
-            x, y = ui_pipe.recv()
-            app.plot_point(x, y)
+            points = ui_pipe.recv()
+            print(points)
+            for point in points:
+                print(point)
+                app.plot_point(point[0], point[1])
         else:
             root.update()  # Update the Tkinter event loop
             time.sleep(0.1)  # Add a short delay to avoid busy waiting
